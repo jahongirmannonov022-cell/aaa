@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodSaver AI - Aqlli Oziq-ovqat Qutqaruv Platforms</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        },
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            border: '#334155'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Leaflet Maps CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- QR Code Generator -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .dark .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 9999px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        #map { height: 100%; min-height: 380px; width: 100%; z-index: 10; border-radius: 1rem; }
+        .animate-pulse-subtle {
+            animation: pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-dark-bg text-gray-800 dark:text-gray-100 transition-colors duration-300 min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- MAIN NAVBAR -->
+    <header class="sticky top-0 z-40 glass border-b border-gray-200 dark:border-dark-border transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('marketplace')">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+                    <i data-lucide="leaf" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-brand-600 via-emerald-500 to-teal-400 bg-clip-text text-transparent">FoodSaver AI</span>
+                    <span class="text-[10px] font-semibold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase block -mt-1">Enterprise Platform</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center gap-1 bg-gray-100/80 dark:bg-gray-800/80 p-1 rounded-2xl border border-gray-200/50 dark:border-gray-700/50">
+                <button onclick="switchTab('marketplace')" id="nav-marketplace" class="nav-btn px-4 py-2 text-sm font-medium rounded-xl transition-all flex items-center gap-2">
+                    <i data-lucide="store" class="w-4 h-4"></i>
+                    <span data-i18n="nav_market">Bozor</span>
+                </button>
+                <button onclick="switchTab('ai-builder')" id="nav-ai-builder" class="nav-btn px-4 py-2 text-sm font-medium rounded-xl transition-all flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+                    <span data-i18n="nav_ai_box">AI Budjet Box</span>
+                </button>
+                <button onclick="switchTab('map-view')" id="nav-map-view" class="nav-btn px-4 py-2 text-sm font-medium rounded-xl transition-all flex items-center gap-2">
+                    <i data-lucide="map-pin" class="w-4 h-4"></i>
+                    <span data-i18n="nav_map">Xarita</span>
+                </button>
+                <button onclick="switchTab('partner')" id="nav-partner" class="nav-btn px-4 py-2 text-sm font-medium rounded-xl transition-all flex items-center gap-2">
+                    <i data-lucide="building-2" class="w-4 h-4"></i>
+                    <span data-i18n="nav_partner">Restoran Portali</span>
+                </button>
+                <button onclick="switchTab('impact')" id="nav-impact" class="nav-btn px-4 py-2 text-sm font-medium rounded-xl transition-all flex items-center gap-2">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                    <span data-i18n="nav_impact">Analitika</span>
+                </button>
+                <button onclick="switchTab('charity')" id="nav-charity" class="nav-btn px-4 py-2 text-sm font-medium rounded-xl transition-all flex items-center gap-2">
+                    <i data-lucide="heart" class="w-4 h-4 text-rose-500"></i>
+                    <span data-i18n="nav_charity">Ehson</span>
+                </button>
+            </nav>
+
+            <!-- Actions & Controls -->
+            <div class="flex items-center gap-2">
+                <!-- Lang Toggle -->
+                <button onclick="toggleLanguage()" class="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-dark-border text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                    <span id="lang-label">UZ</span>
+                </button>
+
+                <!-- Theme Toggle -->
+                <button onclick="toggleTheme()" class="p-2 rounded-xl border border-gray-200 dark:border-dark-border text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                    <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+                    <i data-lucide="moon" class="w-4 h-4 block dark:hidden"></i>
+                </button>
+
+                <!-- Favorites Badge Button -->
+                <button onclick="openFavoritesModal()" class="p-2 rounded-xl border border-gray-200 dark:border-dark-border text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition relative">
+                    <i data-lucide="bookmark" class="w-4 h-4"></i>
+                    <span id="fav-count" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold hidden">0</span>
+                </button>
+
+                <!-- Cart Button -->
+                <button onclick="openCartModal()" class="relative px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold flex items-center gap-2 shadow-lg shadow-brand-500/20 transition">
+                    <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                    <span data-i18n="cart_btn">Savat</span>
+                    <span id="cart-badge" class="bg-white text-brand-700 px-1.5 py-0.5 rounded-full text-[10px] font-bold">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- TAB 1: MARKETPLACE -->
+        <section id="tab-marketplace" class="tab-content space-y-6">
+            <!-- Hero Banner -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-brand-900 via-slate-900 to-emerald-950 text-white p-6 md:p-10 shadow-2xl border border-emerald-500/20">
+                <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative z-10 max-w-2xl space-y-4">
+                    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        <i data-lucide="zap" class="w-3.5 h-3.5"></i> <span data-i18n="hero_badge">Oziq-ovqat isrofiga chek qo'ying</span>
+                    </span>
+                    <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight" data-i18n="hero_title">
+                        Toshkent bo'ylab premium taomlarni 70% gacha arzonroq oling!
+                    </h1>
+                    <p class="text-sm md:text-base text-gray-300" data-i18n="hero_desc">
+                        Restoran, kafe va novvoyxonalarning sifatli ortiqcha taomlarini xarid qilib ham pulingizni, ham tabiatni asrang.
+                    </p>
+                    <div class="flex flex-wrap gap-3 pt-2">
+                        <button onclick="switchTab('ai-builder')" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-gray-900 text-sm font-bold flex items-center gap-2 transition shadow-lg shadow-amber-500/20">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i> <span data-i18n="hero_btn_ai">AI Budjet Yordamchisi</span>
+                        </button>
+                        <button onclick="switchTab('map-view')" class="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold flex items-center gap-2 backdrop-blur-md transition border border-white/15">
+                            <i data-lucide="map" class="w-4 h-4"></i> <span data-i18n="hero_btn_map">Xaritadan Qidirish</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters Bar -->
+            <div class="glass p-4 rounded-2xl border border-gray-200 dark:border-dark-border space-y-4 shadow-sm">
+                <!-- Search & Core Selects -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <!-- Search Input -->
+                    <div class="relative md:col-span-1">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-gray-400"></i>
+                        <input type="text" id="filter-search" oninput="applyFilters()" placeholder="Taom yoki restoran..." data-i18n-ph="ph_search"
+                               class="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+
+                    <!-- District Filter -->
+                    <div>
+                        <select id="filter-district" onchange="applyFilters()" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="all" data-i18n="dist_all">Barcha Tumanlar</option>
+                            <option value="Chilonzor">Chilonzor tumani</option>
+                            <option value="Yunusobod">Yunusobod tumani</option>
+                            <option value="Mirzo Ulug'bek">Mirzo Ulug'bek tumani</option>
+                            <option value="Mirobod">Mirobod tumani</option>
+                            <option value="Yakkasaroy">Yakkasaroy tumani</option>
+                            <option value="Shayxontohur">Shayxontohur tumani</option>
+                            <option value="Sergeli">Sergeli tumani</option>
+                        </select>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div>
+                        <select id="filter-category" onchange="applyFilters()" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="all" data-i18n="cat_all">Barcha Kategoriyalar</option>
+                            <option value="fastfood" data-i18n="cat_fastfood">Fast Food</option>
+                            <option value="milliy" data-i18n="cat_milliy">Milliy Taomlar</option>
+                            <option value="bakery" data-i18n="cat_bakery">Novvoyxona & Shirinliklar</option>
+                            <option value="cafe" data-i18n="cat_cafe">Kafe & Qahvaxona</option>
+                            <option value="free" data-i18n="cat_free">Bepul Ehson (0 UZS)</option>
+                        </select>
+                    </div>
+
+                    <!-- Sorting -->
+                    <div>
+                        <select id="filter-sort" onchange="applyFilters()" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="discount" data-i18n="sort_discount">Eng yuqori chegirma</option>
+                            <option value="price-asc" data-i18n="sort_cheap">Arzonroq</option>
+                            <option value="price-desc" data-i18n="sort_expensive">Qimmatroq</option>
+                            <option value="rating" data-i18n="sort_rating">Eng yuqori reyting</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Price Range Slider -->
+                <div class="flex items-center gap-4 pt-2 border-t border-gray-200/50 dark:border-dark-border/50 text-xs">
+                    <span class="font-medium text-gray-500 dark:text-gray-400" data-i18n="max_price">Maksimal narx:</span>
+                    <input type="range" id="filter-max-price" min="0" max="150000" step="5000" value="150000" oninput="updatePriceSlider(this.value)" class="flex-grow accent-brand-600">
+                    <span id="price-slider-label" class="font-bold text-brand-600 dark:text-brand-400 min-w-[90px]">150,000 UZS</span>
+                </div>
+            </div>
+
+            <!-- Items Grid -->
+            <div id="marketplace-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Dynamically populated via JS -->
+            </div>
+        </section>
+
+        <!-- TAB 2: AI BUDGET BUILDER -->
+        <section id="tab-ai-builder" class="tab-content hidden space-y-6">
+            <div class="glass p-6 md:p-8 rounded-3xl border border-gray-200 dark:border-dark-border shadow-xl">
+                <div class="max-w-xl mx-auto text-center space-y-3 mb-8">
+                    <div class="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-2xl flex items-center justify-center mx-auto border border-amber-500/20">
+                        <i data-lucide="sparkles" class="w-6 h-6"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold tracking-tight" data-i18n="ai_box_title">AI Smart Meal Box Generator</h2>
+                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400" data-i18n="ai_box_desc">
+                        Sizdagi mavjud budjet va odamlar sonini kiriting. Sun'iy intellekt restoranlardagi eng foydali taom toplamini avtomatik saralab beradi.
+                    </p>
+                </div>
+
+                <div class="max-w-2xl mx-auto bg-white dark:bg-dark-card p-6 rounded-2xl border border-gray-200 dark:border-dark-border space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold mb-1" data-i18n="ai_budget_label">Sizdagi Budjet (UZS)</label>
+                            <input type="number" id="ai-input-budget" value="35000" step="1000" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg text-sm font-bold focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold mb-1" data-i18n="ai_people_label">Odamlar soni</label>
+                            <select id="ai-input-people" class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg text-sm font-semibold focus:ring-2 focus:ring-brand-500 outline-none">
+                                <option value="1">1 kishi (Yolg'iz)</option>
+                                <option value="2">2 kishi (Juftlik)</option>
+                                <option value="3">3-4 kishi (Oila/Dostlar)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button onclick="generateAiMealBox()" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-sm shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2">
+                        <i data-lucide="cpu" class="w-4 h-4"></i> <span data-i18n="ai_gen_btn">Optimallashtirilgan To'plam Yaratish</span>
+                    </button>
+                </div>
+
+                <!-- AI Output Display -->
+                <div id="ai-output-container" class="mt-8 max-w-3xl mx-auto hidden">
+                    <div class="bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/30 p-6 rounded-2xl space-y-4">
+                        <div class="flex items-center justify-between border-b border-emerald-500/20 pb-4">
+                            <div>
+                                <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest" data-i18n="ai_res_badge">AI Tavsiyasi</span>
+                                <h3 class="text-lg font-bold" id="ai-box-title">Smart Eco Combo Box</h3>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs text-gray-500 block" data-i18n="ai_total_val">Umumiy qiymati</span>
+                                <span class="text-lg font-extrabold text-brand-600 dark:text-brand-400" id="ai-box-price">0 UZS</span>
+                            </div>
+                        </div>
+
+                        <!-- Generated Items List -->
+                        <div id="ai-box-items" class="space-y-3"></div>
+
+                        <div class="pt-4 flex items-center justify-between">
+                            <span class="text-xs text-emerald-700 dark:text-emerald-300 font-medium" id="ai-box-savings-label">Tejalgan mablag': 0 UZS</span>
+                            <button onclick="addAiBoxToCart()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs flex items-center gap-2 shadow-lg transition">
+                                <i data-lucide="shopping-cart" class="w-4 h-4"></i> <span data-i18n="ai_add_cart">Savatga Qo'shish</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: MAP VIEW -->
+        <section id="tab-map-view" class="tab-content hidden space-y-4">
+            <div class="glass p-4 rounded-2xl border border-gray-200 dark:border-dark-border flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold" data-i18n="map_title">Toshkent Oziq-ovqat Qutqaruv Xaritasi</h2>
+                    <p class="text-xs text-gray-500 dark:text-gray-400" data-i18n="map_subtitle">Yaqiningizdagi restoranlar va ehson markazlarini toping</p>
+                </div>
+                <div class="flex items-center gap-3 text-xs">
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span> Restoranlar</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span> Ehson Uylari</span>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-dark-card rounded-2xl border border-gray-200 dark:border-dark-border p-2 overflow-hidden shadow-lg h-[500px]">
+                <div id="map"></div>
+            </div>
+        </section>
+
+        <!-- TAB 4: RESTAURANT PARTNER PORTAL -->
+        <section id="tab-partner" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- AI Smart Pricing Predictor Calculator -->
+                <div class="lg:col-span-1 glass p-6 rounded-3xl border border-gray-200 dark:border-dark-border space-y-4">
+                    <div class="flex items-center gap-3 border-b border-gray-200/60 dark:border-dark-border pb-3">
+                        <div class="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-500 flex items-center justify-center">
+                            <i data-lucide="calculator" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm" data-i18n="ai_calc_title">AI Narx & Talab Kalkulyatori</h3>
+                            <p class="text-[11px] text-gray-500" data-i18n="ai_calc_sub">Optimal narxni AI orqali aniqlang</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 text-xs">
+                        <div>
+                            <label class="block font-semibold mb-1" data-i18n="calc_orig_price">Asl Narxi (UZS):</label>
+                            <input type="number" id="calc-orig-price" value="45000" step="1000" oninput="runAiPricePredictor()" class="w-full p-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card font-bold">
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1" data-i18n="calc_quantity">Soni (porsiya):</label>
+                            <input type="number" id="calc-quantity" value="5" min="1" oninput="runAiPricePredictor()" class="w-full p-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card font-bold">
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <label class="font-semibold" data-i18n="calc_time_left">Yaroqlilik muddati (soat):</label>
+                                <span id="calc-time-val" class="font-bold text-brand-600">3 soat</span>
+                            </div>
+                            <input type="range" id="calc-hours" min="1" max="12" value="3" oninput="runAiPricePredictor()" class="w-full accent-brand-600">
+                        </div>
+
+                        <!-- AI Output Prediction Box -->
+                        <div class="bg-gray-100 dark:bg-dark-bg p-4 rounded-2xl space-y-2 border border-gray-200 dark:border-dark-border">
+                            <div class="flex justify-between">
+                                <span class="text-gray-500" data-i18n="calc_res_disc">Tavsiya Chegirma:</span>
+                                <span id="calc-res-discount" class="font-bold text-emerald-600">-50%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500" data-i18n="calc_res_price">Tavsiya Narx:</span>
+                                <span id="calc-res-price" class="font-extrabold text-brand-600">22,500 UZS</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500" data-i18n="calc_res_time">Ehtimoliy sotilish vaqti:</span>
+                                <span id="calc-res-speed" class="font-bold text-amber-500">~25 daqiqa</span>
+                            </div>
+                            <div class="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-2 text-[11px]">
+                                <span class="text-gray-500" data-i18n="calc_res_co2">Oldini olingan CO2:</span>
+                                <span id="calc-res-co2" class="font-bold text-teal-500">1.2 kg</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Listing Form -->
+                <div class="lg:col-span-2 glass p-6 rounded-3xl border border-gray-200 dark:border-dark-border space-y-4">
+                    <div class="flex items-center justify-between border-b border-gray-200/60 dark:border-dark-border pb-3">
+                        <h3 class="font-bold text-base" data-i18n="partner_add_title">Yangi Ortiqcha Taom Joylashtirish</h3>
+                        <button onclick="simulateAiPhotoScan()" class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-2 transition">
+                            <i data-lucide="scan" class="w-3.5 h-3.5"></i> <span data-i18n="ai_scan_btn">AI Rasm Scan Simulyatsiyasi</span>
+                        </button>
+                    </div>
+
+                    <form id="partner-form" onsubmit="handlePartnerSubmit(event)" class="space-y-4 text-xs">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-semibold mb-1" data-i18n="form_title">Taom nomi</label>
+                                <input type="text" id="form-name" required placeholder="Masalan: Tovuqli Lavash Set" class="w-full p-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card font-medium">
+                            </div>
+                            <div>
+                                <label class="block font-semibold mb-1" data-i18n="form_rest">Restoran nomi</label>
+                                <input type="text" id="form-rest" required placeholder="Masalan: EVOS Chilonzor" class="w-full p-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card font-medium">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block font-semibold mb-1" data-i18n="form_district">Tuman</label>
+                                <select id="form-district" class="w-full p-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card font-medium">
+                                    <option value="Chilonzor">Chilonzor</option>
+                                    <option value="Yunusobod">Yunusobod</option>
+                                    <option value="Mirzo Ulug'bek">Mirzo Ulug'bek</option>
+                                    <option value="Mirobod">Mirobod</option>
+                                    <option value="Yakkasaroy">Yakkasaroy</option>
+                                    <option value="Shayxontohur">Shayxontohur</option>
+                                    <option value="Sergeli">Sergeli</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold mb-1" data-i18n="form_category">Kategoriya</label>
+                                <select id="form-category" class="w-full p-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card font-medium">
+                                    <option value="fastfood">Fast Food</option>
+                                    <option value="milliy">Milliy Taomlar</option>
+                                    <option value="bakery">Novvoyxona & Shirinliklar</option>
+                                    <option value="cafe">Kafe & Qahvaxona</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold mb-1" data-i18n="form_qty">Mavjud Soni</label>
+                                <input type="number" id="form-qty" value="4" min="1" class="w-full p-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card font-medium">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-semibold mb-1" data-i18n="form_old_price">Eski narx (UZS)</label>
+                                <input type="number" id="form-old-price" required value="40000" class="w-full p-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card font-medium">
+                            </div>
+                            <div>
+                                <label class="block font-semibold mb-1" data-i18n="form_new_price">Chegirmali narx (UZS)</label>
+                                <input type="number" id="form-new-price" required value="18000" class="w-full p-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card font-medium">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold mb-1" data-i18n="form_img">Rasm URL (ixtiyoriy)</label>
+                            <input type="url" id="form-img" placeholder="https://..." class="w-full p-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card font-medium">
+                        </div>
+
+                        <button type="submit" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-lg transition flex items-center justify-center gap-2">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i> <span data-i18n="form_submit">E'lonni Chop Etish</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: ANALYTICS & IMPACT -->
+        <section id="tab-impact" class="tab-content hidden space-y-6">
+            <!-- Stats Counters -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="glass p-5 rounded-2xl border border-gray-200 dark:border-dark-border space-y-2">
+                    <span class="text-xs text-gray-500 font-semibold uppercase" data-i18n="stat_food_saved">Qutqarilgan Oziq-ovqat</span>
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-2xl font-extrabold text-brand-600">1,482 kg</span>
+                        <i data-lucide="scale" class="w-5 h-5 text-brand-500"></i>
+                    </div>
+                </div>
+                <div class="glass p-5 rounded-2xl border border-gray-200 dark:border-dark-border space-y-2">
+                    <span class="text-xs text-gray-500 font-semibold uppercase" data-i18n="stat_co2">Oldini Olingan CO2</span>
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-2xl font-extrabold text-teal-600">3,705 kg</span>
+                        <i data-lucide="cloud-off" class="w-5 h-5 text-teal-500"></i>
+                    </div>
+                </div>
+                <div class="glass p-5 rounded-2xl border border-gray-200 dark:border-dark-border space-y-2">
+                    <span class="text-xs text-gray-500 font-semibold uppercase" data-i18n="stat_money">Aholi Tejamkorligi</span>
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-2xl font-extrabold text-amber-500">42.5M UZS</span>
+                        <i data-lucide="coins" class="w-5 h-5 text-amber-500"></i>
+                    </div>
+                </div>
+                <div class="glass p-5 rounded-2xl border border-gray-200 dark:border-dark-border space-y-2">
+                    <span class="text-xs text-gray-500 font-semibold uppercase" data-i18n="stat_partners">Aktiv Restoranlar</span>
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-2xl font-extrabold text-purple-600">68+</span>
+                        <i data-lucide="store" class="w-5 h-5 text-purple-500"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass p-6 rounded-3xl border border-gray-200 dark:border-dark-border space-y-4">
+                    <h3 class="font-bold text-sm" data-i18n="chart1_title">Oylik Tejalgan Oziq-ovqat Dinamikasi (kg)</h3>
+                    <div class="h-64">
+                        <canvas id="impactChart1"></canvas>
+                    </div>
+                </div>
+                <div class="glass p-6 rounded-3xl border border-gray-200 dark:border-dark-border space-y-4">
+                    <h3 class="font-bold text-sm" data-i18n="chart2_title">Kategoriyalar Bo'yicha Ulush</h3>
+                    <div class="h-64 flex items-center justify-center">
+                        <canvas id="impactChart2"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard -->
+            <div class="glass p-6 rounded-3xl border border-gray-200 dark:border-dark-border space-y-4">
+                <h3 class="font-bold text-base" data-i18n="leaderboard_title">Top Ekologik Restoranlar Reytingi</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-gray-200 dark:border-dark-border text-gray-400">
+                                <th class="pb-3" data-i18n="th_rank">O'rin</th>
+                                <th class="pb-3" data-i18n="th_partner">Restoran</th>
+                                <th class="pb-3" data-i18n="th_saved">Qutqarilgan (kg)</th>
+                                <th class="pb-3" data-i18n="th_badge">Nishon</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200/50 dark:divide-dark-border/50">
+                            <tr>
+                                <td class="py-3 font-bold text-amber-500">#1</td>
+                                <td class="py-3 font-semibold">EVOS Toshkent</td>
+                                <td class="py-3 font-bold">420 kg</td>
+                                <td class="py-3"><span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 font-bold">Yashil Qahramon</span></td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-bold text-gray-400">#2</td>
+                                <td class="py-3 font-semibold">Safia Bakery & Cafe</td>
+                                <td class="py-3 font-bold">385 kg</td>
+                                <td class="py-3"><span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-bold">Ekologik Restoran</span></td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-bold text-amber-700">#3</td>
+                                <td class="py-3 font-semibold">Rayhon Milliy Taomlar</td>
+                                <td class="py-3 font-bold">290 kg</td>
+                                <td class="py-3"><span class="px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-600 font-bold">Oziq-ovqat Qutqaruvchisi</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 6: CHARITY & DONATION HUB -->
+        <section id="tab-charity" class="tab-content hidden space-y-6">
+            <div class="glass p-6 md:p-8 rounded-3xl border border-rose-500/20 bg-gradient-to-br from-rose-500/5 to-transparent space-y-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+                        <i data-lucide="heart-handshake" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold" data-i18n="charity_title">Ehson & Saxovat Markazi</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400" data-i18n="charity_desc">Ehtiyojmand oilalar va bolalar uylariga bepul taom ulashing</p>
+                    </div>
+                </div>
+
+                <!-- Charity Listings Grid -->
+                <div id="charity-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Dynamic charity items with 0 UZS badge -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- SHOPPING CART MODAL -->
+    <div id="cart-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex justify-end transition-opacity">
+        <div class="w-full max-w-md bg-white dark:bg-dark-card h-full shadow-2xl flex flex-col p-6 space-y-4 overflow-y-auto custom-scrollbar">
+            <div class="flex items-center justify-between border-b border-gray-200 dark:border-dark-border pb-4">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="shopping-bag" class="w-5 h-5 text-brand-600"></i>
+                    <h3 class="font-bold text-lg" data-i18n="cart_title">Sizning Savatingiz</h3>
+                </div>
+                <button onclick="closeCartModal()" class="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Cart Items List -->
+            <div id="cart-items-list" class="flex-grow space-y-3 overflow-y-auto">
+                <!-- Dynamically populated -->
+            </div>
+
+            <!-- Cart Footer -->
+            <div class="border-t border-gray-200 dark:border-dark-border pt-4 space-y-4">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-500" data-i18n="cart_total">Jami summa:</span>
+                    <span id="cart-total-price" class="font-extrabold text-lg text-brand-600 dark:text-brand-400">0 UZS</span>
+                </div>
+
+                <!-- Payment Options -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold text-gray-500" data-i18n="cart_payment_method">To'lov usuli:</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="p-2.5 rounded-xl border border-gray-200 dark:border-dark-border flex items-center gap-2 cursor-pointer hover:border-brand-500 text-xs font-bold">
+                            <input type="radio" name="payment" value="Click" checked class="accent-brand-600"> Click
+                        </label>
+                        <label class="p-2.5 rounded-xl border border-gray-200 dark:border-dark-border flex items-center gap-2 cursor-pointer hover:border-brand-500 text-xs font-bold">
+                            <input type="radio" name="payment" value="Payme" class="accent-brand-600"> Payme
+                        </label>
+                        <label class="p-2.5 rounded-xl border border-gray-200 dark:border-dark-border flex items-center gap-2 cursor-pointer hover:border-brand-500 text-xs font-bold">
+                            <input type="radio" name="payment" value="Uzum Pay" class="accent-brand-600"> Uzum Pay
+                        </label>
+                        <label class="p-2.5 rounded-xl border border-gray-200 dark:border-dark-border flex items-center gap-2 cursor-pointer hover:border-brand-500 text-xs font-bold">
+                            <input type="radio" name="payment" value="Cash" class="accent-brand-600"> Naqd (Olib ketishda)
+                        </label>
+                    </div>
+                </div>
+
+                <button onclick="processCheckout()" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-lg shadow-brand-500/20 transition flex items-center justify-center gap-2">
+                    <i data-lucide="check-circle-2" class="w-4 h-4"></i> <span data-i18n="cart_checkout_btn">Buyurtmani Tasdiqlash</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR VOUCHER MODAL -->
+    <div id="voucher-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-dark-card max-w-sm w-full rounded-3xl p-6 text-center space-y-4 shadow-2xl border border-gray-200 dark:border-dark-border">
+            <div class="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
+                <i data-lucide="qr-code" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-lg" data-i18n="voucher_title">Buyurtma Voucheri</h3>
+                <p class="text-xs text-gray-500" data-i18n="voucher_sub">Restoranga ushbu QR-kodni ko'rsating</p>
+            </div>
+
+            <!-- QR Code Render Container -->
+            <div class="flex justify-center p-4 bg-gray-50 dark:bg-dark-bg rounded-2xl border border-gray-200 dark:border-dark-border">
+                <div id="qrcode-box"></div>
+            </div>
+
+            <div class="space-y-1 text-xs">
+                <p class="font-semibold text-gray-500">Order ID: <span id="voucher-order-id" class="font-bold text-gray-800 dark:text-gray-200">#FS-9042</span></p>
+                <p class="text-amber-500 font-bold" id="voucher-timer">Olib ketish vaqti: 45:00 daqiqa</p>
+            </div>
+
+            <button onclick="closeVoucherModal()" class="w-full py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-bold text-xs transition">
+                Yopish
+            </button>
+        </div>
+    </div>
+
+    <!-- FAVORITES MODAL -->
+    <div id="favorites-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-dark-card max-w-lg w-full rounded-3xl p-6 space-y-4 shadow-2xl border border-gray-200 dark:border-dark-border">
+            <div class="flex items-center justify-between border-b border-gray-200 dark:border-dark-border pb-3">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i data-lucide="bookmark" class="w-5 h-5 text-rose-500"></i>
+                    <span data-i18n="fav_modal_title">Mening Saralanganlarim</span>
+                </h3>
+                <button onclick="closeFavoritesModal()" class="p-1 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div id="favorites-list" class="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
+                <!-- Populated via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+        // --- TRANSLATIONS (UZ / RU) ---
+        const translations = {
+            uz: {
+                nav_market: "Bozor",
+                nav_ai_box: "AI Budjet Box",
+                nav_map: "Xarita",
+                nav_partner: "Restoran Portali",
+                nav_impact: "Analitika",
+                nav_charity: "Ehson",
+                cart_btn: "Savat",
+                hero_badge: "Oziq-ovqat isrofiga chek qo'ying",
+                hero_title: "Toshkent bo'ylab premium taomlarni 70% gacha arzonroq oling!",
+                hero_desc: "Restoran, kafe va novvoyxonalarning sifatli ortiqcha taomlarini xarid qilib ham pulingizni, ham tabiatni asrang.",
+                hero_btn_ai: "AI Budjet Yordamchisi",
+                hero_btn_map: "Xaritadan Qidirish",
+                ph_search: "Taom yoki restoran...",
+                dist_all: "Barcha Tumanlar",
+                cat_all: "Barcha Kategoriyalar",
+                cat_fastfood: "Fast Food",
+                cat_milliy: "Milliy Taomlar",
+                cat_bakery: "Novvoyxona & Shirinliklar",
+                cat_cafe: "Kafe & Qahvaxona",
+                cat_free: "Bepul Ehson (0 UZS)",
+                sort_discount: "Eng yuqori chegirma",
+                sort_cheap: "Arzonroq",
+                sort_expensive: "Qimmatroq",
+                sort_rating: "Eng yuqori reyting",
+                max_price: "Maksimal narx:",
+                ai_box_title: "AI Smart Meal Box Generator",
+                ai_box_desc: "Sizdagi mavjud budjet va odamlar sonini kiriting. Sun'iy intellekt restoranlardagi eng foydali taom toplamini avtomatik saralab beradi.",
+                ai_budget_label: "Sizdagi Budjet (UZS)",
+                ai_people_label: "Odamlar soni",
+                ai_gen_btn: "Optimallashtirilgan To'plam Yaratish",
+                ai_res_badge: "AI Tavsiyasi",
+                ai_total_val: "Umumiy qiymati",
+                ai_add_cart: "Savatga Qo'shish",
+                map_title: "Toshkent Oziq-ovqat Qutqaruv Xaritasi",
+                map_subtitle: "Yaqiningizdagi restoranlar va ehson markazlarini toping",
+                ai_calc_title: "AI Narx & Talab Kalkulyatori",
+                ai_calc_sub: "Optimal narxni AI orqali aniqlang",
+                calc_orig_price: "Asl Narxi (UZS):",
+                calc_quantity: "Soni (porsiya):",
+                calc_time_left: "Yaroqlilik muddati (soat):",
+                calc_res_disc: "Tavsiya Chegirma:",
+                calc_res_price: "Tavsiya Narx:",
+                calc_res_speed: "Ehtimoliy sotilish vaqti:",
+                calc_res_co2: "Oldini olingan CO2:",
+                partner_add_title: "Yangi Ortiqcha Taom Joylashtirish",
+                ai_scan_btn: "AI Rasm Scan Simulyatsiyasi",
+                form_title: "Taom nomi",
+                form_rest: "Restoran nomi",
+                form_district: "Tuman",
+                form_category: "Kategoriya",
+                form_qty: "Mavjud Soni",
+                form_old_price: "Eski narx (UZS)",
+                form_new_price: "Chegirmali narx (UZS)",
+                form_img: "Rasm URL (ixtiyoriy)",
+                form_submit: "E'lonni Chop Etish",
+                stat_food_saved: "Qutqarilgan Oziq-ovqat",
+                stat_co2: "Oldini Olingan CO2",
+                stat_money: "Aholi Tejamkorligi",
+                stat_partners: "Aktiv Restoranlar",
+                chart1_title: "Oylik Tejalgan Oziq-ovqat Dinamikasi (kg)",
+                chart2_title: "Kategoriyalar Bo'yicha Ulush",
+                leaderboard_title: "Top Ekologik Restoranlar Reytingi",
+                th_rank: "O'rin",
+                th_partner: "Restoran",
+                th_saved: "Qutqarilgan (kg)",
+                th_badge: "Nishon",
+                charity_title: "Ehson & Saxovat Markazi",
+                charity_desc: "Ehtiyojmand oilalar va bolalar uylariga bepul taom ulashing",
+                cart_title: "Sizning Savatingiz",
+                cart_total: "Jami summa:",
+                cart_payment_method: "To'lov usuli:",
+                cart_checkout_btn: "Buyurtmani Tasdiqlash",
+                voucher_title: "Buyurtma Voucheri",
+                voucher_sub: "Restoranga ushbu QR-kodni ko'rsating",
+                fav_modal_title: "Mening Saralanganlarim"
+            },
+            ru: {
+                nav_market: "Маркет",
+                nav_ai_box: "AI Бюджет Бокс",
+                nav_map: "Карта",
+                nav_partner: "Портал Ресторана",
+                nav_impact: "Аналитика",
+                nav_charity: "Благотворительность",
+                cart_btn: "Корзина",
+                hero_badge: "Остановите пищевые отходы",
+                hero_title: "Премиум блюда по Ташкенту со скидкой до 70%!",
+                hero_desc: "Покупайте качественную избыточную еду из ресторанов и кафе, экономя деньги и природу.",
+                hero_btn_ai: "AI Помощник Бюджета",
+                hero_btn_map: "Поиск на карте",
+                ph_search: "Блюдо или ресторан...",
+                dist_all: "Все Районы",
+                cat_all: "Все Категории",
+                cat_fastfood: "Фастфуд",
+                cat_milliy: "Национальная кухня",
+                cat_bakery: "Пекарня и Сладости",
+                cat_cafe: "Кафе и Кофейни",
+                cat_free: "Бесплатно (0 UZS)",
+                sort_discount: "Макс. скидка",
+                sort_cheap: "Дешевле",
+                sort_expensive: "Дороже",
+                sort_rating: "Высокий рейтинг",
+                max_price: "Максимальная цена:",
+                ai_box_title: "AI Генератор Наборов Еды",
+                ai_box_desc: "Укажите ваш бюджет и количество человек. ИИ автоматически подберет выгодный набор из ресторанов.",
+                ai_budget_label: "Ваш Бюджет (UZS)",
+                ai_people_label: "Количество человек",
+                ai_gen_btn: "Сгенерировать Оптимальный Набор",
+                ai_res_badge: "Рекомендация ИИ",
+                ai_total_val: "Общая стоимость",
+                ai_add_cart: "Добавить в корзину",
+                map_title: "Карта Спасения Еды Ташкента",
+                map_subtitle: "Найдите ближайшие рестораны и центры помощи",
+                ai_calc_title: "AI Калькулятор Цены и Спроса",
+                ai_calc_sub: "Определите оптимальную цену с помощью ИИ",
+                calc_orig_price: "Исходная цена (UZS):",
+                calc_quantity: "Количество (порции):",
+                calc_time_left: "Срок годности (часов):",
+                calc_res_disc: "Реком. скидка:",
+                calc_res_price: "Реком. цена:",
+                calc_res_speed: "Ожидаемое время продажи:",
+                calc_res_co2: "Предотвращено CO2:",
+                partner_add_title: "Добавить Избыточное Блюдо",
+                ai_scan_btn: "AI Имитация Сканирования",
+                form_title: "Название блюда",
+                form_rest: "Название ресторана",
+                form_district: "Район",
+                form_category: "Категория",
+                form_qty: "Количество",
+                form_old_price: "Старая цена (UZS)",
+                form_new_price: "Цена со скидкой (UZS)",
+                form_img: "URL Изображения (опционально)",
+                form_submit: "Опубликовать",
+                stat_food_saved: "Спасенная Еда",
+                stat_co2: "Предотвращено CO2",
+                stat_money: "Сэкономлено людьми",
+                stat_partners: "Активные Рестораны",
+                chart1_title: "Динамика Спасенной Еды в месяц (кг)",
+                chart2_title: "Доля по Категориям",
+                leaderboard_title: "Рейтинг Топ Эко-Ресторанов",
+                th_rank: "Место",
+                th_partner: "Ресторан",
+                th_saved: "Спасeno (кг)",
+                th_badge: "Значок",
+                charity_title: "Центр Благотворительности",
+                charity_desc: "Делитесь бесплатной едой с нуждающимися семьями и детскими домами",
+                cart_title: "Ваша Корзина",
+                cart_total: "Итоговая сумма:",
+                cart_payment_method: "Способ оплаты:",
+                cart_checkout_btn: "Подтвердить Заказ",
+                voucher_title: "Ваучер Заказа",
+                voucher_sub: "Покажите этот QR-код в ресторане",
+                fav_modal_title: "Избранное"
+            }
+        };
+
+        // --- MOCK DATABASE INITIAL STATE ---
+        const initialProducts = [
+            {
+                id: 1,
+                name: "Osh & Choy Set (2 Porsiya)",
+                restaurant: "Rayhon Milliy Taomlar",
+                district: "Chilonzor",
+                category: "milliy",
+                oldPrice: 50000,
+                price: 22000,
+                rating: 4.9,
+                qty: 4,
+                hoursLeft: 2,
+                isCharity: false,
+                lat: 41.2827,
+                lng: 69.2048,
+                image: "https://images.unsplash.com/photo-1541518763669-27fef04b14e8?auto=format&fit=crop&w=600&q=80"
+            },
+            {
+                id: 2,
+                name: "Tovuqli Double Cheese Burger Set",
+                restaurant: "EVOS Yunusobod",
+                district: "Yunusobod",
+                category: "fastfood",
+                oldPrice: 42000,
+                price: 18000,
+                rating: 4.8,
+                qty: 6,
+                hoursLeft: 3,
+                isCharity: false,
+                lat: 41.3645,
+                lng: 69.2897,
+                image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80"
+            },
+            {
+                id: 3,
+                name: "Kruassan va Capuchino Assorti",
+                restaurant: "Safia Cafe & Bakery",
+                district: "Mirobod",
+                category: "bakery",
+                oldPrice: 38000,
+                price: 15000,
+                rating: 4.9,
+                qty: 3,
+                hoursLeft: 1,
+                isCharity: false,
+                lat: 41.2995,
+                lng: 69.2670,
+                image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=600&q=80"
+            },
+            {
+                id: 4,
+                name: "Tovuq Sochniy Kebab Set",
+                restaurant: "Shashlik.uz",
+                district: "Mirzo Ulug'bek",
+                category: "milliy",
+                oldPrice: 60000,
+                price: 25000,
+                rating: 4.7,
+                qty: 5,
+                hoursLeft: 4,
+                isCharity: false,
+                lat: 41.3275,
+                lng: 69.3312,
+                image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80"
+            },
+            {
+                id: 5,
+                name: "Issiq Tandir Non Assorti (Free)",
+                restaurant: "Nonvoyxona Baraka",
+                district: "Shayxontohur",
+                category: "free",
+                oldPrice: 20000,
+                price: 0,
+                rating: 5.0,
+                qty: 10,
+                hoursLeft: 2,
+                isCharity: true,
+                lat: 41.3111,
+                lng: 69.2405,
+                image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80"
+            }
+        ];
+
+        // --- APP STATE ---
+        let currentLang = localStorage.getItem('foodsaver_lang') || 'uz';
+        let products = JSON.parse(localStorage.getItem('foodsaver_products')) || initialProducts;
+        let cart = JSON.parse(localStorage.getItem('foodsaver_cart')) || [];
+        let favorites = JSON.parse(localStorage.getItem('foodsaver_favs')) || [];
+        let map = null;
+        let mapMarkers = [];
+
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            applyLanguage(currentLang);
+            updateCartBadge();
+            updateFavBadge();
+            renderMarketplace();
+            renderCharityGrid();
+            initCharts();
+            runAiPricePredictor();
+        });
+
+        // --- NAVIGATION & TABS ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'dark:bg-dark-card', 'text-brand-600', 'shadow-sm');
+            });
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if(activeNav) {
+                activeNav.classList.add('bg-white', 'dark:bg-dark-card', 'text-brand-600', 'shadow-sm');
+            }
+
+            if(tabId === 'map-view') {
+                setTimeout(initMap, 200);
+            }
+        }
+
+        // --- LANGUAGE & THEME TOGGLE ---
+        function toggleLanguage() {
+            currentLang = currentLang === 'uz' ? 'ru' : 'uz';
+            localStorage.setItem('foodsaver_lang', currentLang);
+            document.getElementById('lang-label').innerText = currentLang.toUpperCase();
+            applyLanguage(currentLang);
+            renderMarketplace();
+            renderCharityGrid();
+        }
+
+        function applyLanguage(lang) {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if(translations[lang][key]) el.innerText = translations[lang][key];
+            });
+            document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+                const key = el.getAttribute('data-i18n-ph');
+                if(translations[lang][key]) el.placeholder = translations[lang][key];
+            });
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        // --- TOAST NOTIFICATIONS ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-2xl text-xs font-bold text-white shadow-xl flex items-center gap-3 transition-all transform translate-y-2 pointer-events-auto ${
+                type === 'success' ? 'bg-brand-600' : type === 'info' ? 'bg-amber-500' : 'bg-purple-600'
+            }`;
+            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'info'}" class="w-4 h-4"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- MARKETPLACE RENDERING & FILTERS ---
+        function updatePriceSlider(val) {
+            document.getElementById('price-slider-label').innerText = `${parseInt(val).toLocaleString()} UZS`;
+            applyFilters();
+        }
+
+        function applyFilters() {
+            renderMarketplace();
+        }
+
+        function renderMarketplace() {
+            const grid = document.getElementById('marketplace-grid');
+            const search = document.getElementById('filter-search').value.toLowerCase();
+            const district = document.getElementById('filter-district').value;
+            const category = document.getElementById('filter-category').value;
+            const sort = document.getElementById('filter-sort').value;
+            const maxPrice = parseInt(document.getElementById('filter-max-price').value);
+
+            let filtered = products.filter(p => !p.isCharity);
+
+            if (search) {
+                filtered = filtered.filter(p => p.name.toLowerCase().includes(search) || p.restaurant.toLowerCase().includes(search));
+            }
+            if (district !== 'all') {
+                filtered = filtered.filter(p => p.district === district);
+            }
+            if (category !== 'all') {
+                filtered = filtered.filter(p => p.category === category);
+            }
+            filtered = filtered.filter(p => p.price <= maxPrice);
+
+            // Sorting
+            if (sort === 'cheap') filtered.sort((a,b) => a.price - b.price);
+            else if (sort === 'expensive') filtered.sort((a,b) => b.price - a.price);
+            else if (sort === 'rating') filtered.sort((a,b) => b.rating - a.rating);
+            else {
+                // Default: highest discount
+                filtered.sort((a,b) => ((b.oldPrice - b.price)/b.oldPrice) - ((a.oldPrice - a.price)/a.oldPrice));
+            }
+
+            grid.innerHTML = '';
+
+            if(filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400 text-sm">Hech qanday taom topilmadi.</div>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const discountPct = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
+                const isFav = favorites.includes(p.id);
+
+                const card = document.createElement('div');
+                card.className = "glass rounded-3xl border border-gray-200 dark:border-dark-border overflow-hidden flex flex-col group hover:shadow-2xl transition-all duration-300";
+                card.innerHTML = `
+                    <div class="relative h-48 overflow-hidden">
+                        <img src="${p.image}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <span class="absolute top-3 left-3 bg-rose-500 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-md">
+                            -${discountPct}% OFF
+                        </span>
+                        <button onclick="toggleFavorite(${p.id})" class="absolute top-3 right-3 p-2 rounded-full bg-white/80 dark:bg-dark-card/80 backdrop-blur-md text-gray-700 dark:text-gray-200 hover:text-rose-500 transition">
+                            <i data-lucide="bookmark" class="w-4 h-4 ${isFav ? 'fill-rose-500 text-rose-500' : ''}"></i>
+                        </button>
+                    </div>
+                    <div class="p-5 flex-grow flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 mb-1">
+                                <span class="font-bold text-brand-600 dark:text-brand-400 flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i> ${p.district}</span>
+                                <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3 text-amber-500"></i> ${p.hoursLeft} Soat qoldi</span>
+                            </div>
+                            <h4 class="font-bold text-sm line-clamp-1">${p.name}</h4>
+                            <p class="text-xs text-gray-400 font-medium">${p.restaurant}</p>
+                        </div>
+
+                        <div class="pt-2 border-t border-gray-200/50 dark:border-dark-border/50 flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] text-gray-400 line-through block">${p.oldPrice.toLocaleString()} UZS</span>
+                                <span class="text-base font-extrabold text-brand-600 dark:text-brand-400">${p.price.toLocaleString()} UZS</span>
+                            </div>
+                            <button onclick="addToCart(${p.id})" class="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-brand-500/20">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        // --- FAVORITES MANAGEMENT ---
+        function toggleFavorite(id) {
+            if(favorites.includes(id)) {
+                favorites = favorites.filter(f => f !== id);
+                showToast("Saralanganlardan olib tashlandi", "info");
+            } else {
+                favorites.push(id);
+                showToast("Saralanganlarga qo'shildi!", "success");
+            }
+            localStorage.setItem('foodsaver_favs', JSON.stringify(favorites));
+            updateFavBadge();
+            renderMarketplace();
+        }
+
+        function updateFavBadge() {
+            const badge = document.getElementById('fav-count');
+            badge.innerText = favorites.length;
+            if(favorites.length > 0) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
+        }
+
+        function openFavoritesModal() {
+            const modal = document.getElementById('favorites-modal');
+            const list = document.getElementById('favorites-list');
+            list.innerHTML = '';
+
+            const favItems = products.filter(p => favorites.includes(p.id));
+            if(favItems.length === 0) {
+                list.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Sizda saralangan taomlar mavjud emas.</p>`;
+            } else {
+                favItems.forEach(p => {
+                    const item = document.createElement('div');
+                    item.className = "flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border";
+                    item.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <img src="${p.image}" class="w-12 h-12 rounded-xl object-cover">
+                            <div>
+                                <h5 class="text-xs font-bold">${p.name}</h5>
+                                <span class="text-[10px] text-brand-600 font-bold">${p.price.toLocaleString()} UZS</span>
+                            </div>
+                        </div>
+                        <button onclick="addToCart(${p.id}); closeFavoritesModal();" class="px-3 py-1.5 rounded-xl bg-brand-600 text-white text-xs font-bold">
+                            Savatga
+                        </button>
+                    `;
+                    list.appendChild(item);
+                });
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeFavoritesModal() {
+            document.getElementById('favorites-modal').classList.add('hidden');
+        }
+
+        // --- CART SYSTEM ---
+        function addToCart(id) {
+            const product = products.find(p => p.id === id);
+            if(!product) return;
+
+            const existing = cart.find(c => c.id === id);
+            if(existing) {
+                existing.qty++;
+            } else {
+                cart.push({ ...product, qty: 1 });
+            }
+            saveCart();
+            showToast(`${product.name} savatga qo'shildi!`, "success");
+        }
+
+        function saveCart() {
+            localStorage.setItem('foodsaver_cart', JSON.stringify(cart));
+            updateCartBadge();
+            renderCartItems();
+        }
+
+        function updateCartBadge() {
+            const count = cart.reduce((acc, i) => acc + i.qty, 0);
+            document.getElementById('cart-badge').innerText = count;
+        }
+
+        function openCartModal() {
+            renderCartItems();
+            document.getElementById('cart-modal').classList.remove('hidden');
+        }
+
+        function closeCartModal() {
+            document.getElementById('cart-modal').classList.add('hidden');
+        }
+
+        function renderCartItems() {
+            const container = document.getElementById('cart-items-list');
+            const totalPriceEl = document.getElementById('cart-total-price');
+            container.innerHTML = '';
+
+            let total = 0;
+            if(cart.length === 0) {
+                container.innerHTML = `<div class="text-center text-xs text-gray-400 py-10">Savatingiz bo'sh.</div>`;
+            } else {
+                cart.forEach((item, index) => {
+                    total += item.price * item.qty;
+                    const el = document.createElement('div');
+                    el.className = "p-3 rounded-2xl bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-dark-border flex items-center justify-between gap-2";
+                    el.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <img src="${item.image}" class="w-12 h-12 rounded-xl object-cover">
+                            <div>
+                                <h5 class="text-xs font-bold line-clamp-1">${item.name}</h5>
+                                <span class="text-[11px] text-brand-600 font-extrabold">${(item.price * item.qty).toLocaleString()} UZS</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changeQty(${index}, -1)" class="w-6 h-6 rounded-lg bg-gray-200 dark:bg-gray-700 font-bold flex items-center justify-center text-xs">-</button>
+                            <span class="text-xs font-bold">${item.qty}</span>
+                            <button onclick="changeQty(${index}, 1)" class="w-6 h-6 rounded-lg bg-gray-200 dark:bg-gray-700 font-bold flex items-center justify-center text-xs">+</button>
+                        </div>
+                    `;
+                    container.appendChild(el);
+                });
+            }
+            totalPriceEl.innerText = `${total.toLocaleString()} UZS`;
+        }
+
+        function changeQty(index, delta) {
+            cart[index].qty += delta;
+            if(cart[index].qty <= 0) cart.splice(index, 1);
+            saveCart();
+        }
+
+        function processCheckout() {
+            if(cart.length === 0) {
+                showToast("Savatingiz bo'sh!", "info");
+                return;
+            }
+
+            const orderId = `#FS-${Math.floor(1000 + Math.random() * 9000)}`;
+            cart = [];
+            saveCart();
+            closeCartModal();
+
+            // Open QR Voucher
+            document.getElementById('voucher-order-id').innerText = orderId;
+            const qrcodeBox = document.getElementById('qrcode-box');
+            qrcodeBox.innerHTML = '';
+            new QRCode(qrcodeBox, {
+                text: `https://foodsaver.uz/voucher/${orderId}`,
+                width: 140,
+                height: 140
+            });
+
+            document.getElementById('voucher-modal').classList.remove('hidden');
+            showToast("Buyurtma muvaffaqiyatli rasmiylashtirildi!", "success");
+        }
+
+        function closeVoucherModal() {
+            document.getElementById('voucher-modal').classList.add('hidden');
+        }
+
+        // --- AI BUDGET MEAL BOX BUILDER ---
+        function generateAiMealBox() {
+            const budget = parseInt(document.getElementById('ai-input-budget').value) || 30000;
+            const people = parseInt(document.getElementById('ai-input-people').value) || 1;
+
+            const nonCharity = products.filter(p => !p.isCharity && p.price <= budget);
+            if(nonCharity.length === 0) {
+                showToast("Berilgan budjet bo'yicha mos taomlar topilmadi", "info");
+                return;
+            }
+
+            // AI algorithm simulation: pick optimal combos
+            let selected = [];
+            let currentTotal = 0;
+
+            for(let p of nonCharity) {
+                if(currentTotal + p.price <= budget) {
+                    selected.push(p);
+                    currentTotal += p.price;
+                }
+            }
+
+            const output = document.getElementById('ai-output-container');
+            const itemsContainer = document.getElementById('ai-box-items');
+            itemsContainer.innerHTML = '';
+
+            selected.forEach(p => {
+                const el = document.createElement('div');
+                el.className = "flex items-center justify-between p-3 rounded-xl bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border text-xs";
+                el.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <img src="${p.image}" class="w-10 h-10 rounded-lg object-cover">
+                        <div>
+                            <h5 class="font-bold">${p.name}</h5>
+                            <span class="text-[10px] text-gray-400">${p.restaurant}</span>
+                        </div>
+                    </div>
+                    <span class="font-bold text-brand-600">${p.price.toLocaleString()} UZS</span>
+                `;
+                itemsContainer.appendChild(el);
+            });
+
+            document.getElementById('ai-box-price').innerText = `${currentTotal.toLocaleString()} UZS`;
+            document.getElementById('ai-box-savings-label').innerText = `Tejalgan mablag': ${(budget - currentTotal).toLocaleString()} UZS`;
+            output.classList.remove('hidden');
+            showToast("AI to'plami muvaffaqiyatli yaratildi!", "purple");
+        }
+
+        function addAiBoxToCart() {
+            showToast("AI to'plami savatga qo'shildi!", "success");
+            switchTab('marketplace');
+            openCartModal();
+        }
+
+        // --- AI PRICE PREDICTOR (RESTAURANT PORTAL) ---
+        function runAiPricePredictor() {
+            const origPrice = parseFloat(document.getElementById('calc-orig-price').value) || 45000;
+            const hours = parseInt(document.getElementById('calc-hours').value) || 3;
+
+            document.getElementById('calc-time-val').innerText = `${hours} soat`;
+
+            // Dynamic calculation logic
+            let discount = 30 + (12 - hours) * 5;
+            if(discount > 75) discount = 75;
+            if(discount < 20) discount = 20;
+
+            const recPrice = Math.round((origPrice * (100 - discount) / 100) / 1000) * 1000;
+            const sellSpeed = Math.max(10, Math.round(60 - (discount * 0.6)));
+            const co2Saved = (origPrice / 10000 * 0.3).toFixed(1);
+
+            document.getElementById('calc-res-discount').innerText = `-${discount}%`;
+            document.getElementById('calc-res-price').innerText = `${recPrice.toLocaleString()} UZS`;
+            document.getElementById('calc-res-speed').innerText = `~${sellSpeed} daqiqa`;
+            document.getElementById('calc-res-co2').innerText = `${co2Saved} kg`;
+        }
+
+        function simulateAiPhotoScan() {
+            showToast("AI Taom Rasmini Skanerlamoqda...", "purple");
+            setTimeout(() => {
+                document.getElementById('form-name').value = "Premium Sushi Roll Assorti";
+                document.getElementById('form-rest').value = "Yaponamama Mirobod";
+                document.getElementById('form-old-price').value = "85000";
+                document.getElementById('form-new-price').value = "35000";
+                document.getElementById('form-img').value = "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=600&q=80";
+                showToast("AI Avto-to'ldirish muvaffaqiyatli bajarildi!", "success");
+            }, 1200);
+        }
+
+        function handlePartnerSubmit(e) {
+            e.preventDefault();
+            const newListing = {
+                id: Date.now(),
+                name: document.getElementById('form-name').value,
+                restaurant: document.getElementById('form-rest').value,
+                district: document.getElementById('form-district').value,
+                category: document.getElementById('form-category').value,
+                oldPrice: parseInt(document.getElementById('form-old-price').value),
+                price: parseInt(document.getElementById('form-new-price').value),
+                rating: 5.0,
+                qty: parseInt(document.getElementById('form-qty').value),
+                hoursLeft: 4,
+                isCharity: false,
+                lat: 41.2995 + (Math.random() - 0.5) * 0.05,
+                lng: 69.2670 + (Math.random() - 0.5) * 0.05,
+                image: document.getElementById('form-img').value || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80"
+            };
+
+            products.unshift(newListing);
+            localStorage.setItem('foodsaver_products', JSON.stringify(products));
+            showToast("E'loningiz muvaffaqiyatli chop etildi!", "success");
+            switchTab('marketplace');
+            renderMarketplace();
+        }
+
+        // --- LEAFLET MAP INTEGRATION ---
+        function initMap() {
+            if(map) return;
+            map = L.map('map').setView([41.311082, 69.240562], 12);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            products.forEach(p => {
+                const markerColor = p.isCharity ? '#f43f5e' : '#16a34a';
+                const customIcon = L.divIcon({
+                    className: 'custom-pin',
+                    html: `<div style="background-color: ${markerColor}; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"></div>`
+                });
+
+                const marker = L.marker([p.lat, p.lng], { icon: customIcon }).addTo(map);
+                marker.bindPopup(`
+                    <div class="p-2 space-y-1">
+                        <h5 class="font-bold text-xs">${p.name}</h5>
+                        <p class="text-[10px] text-gray-500">${p.restaurant}</p>
+                        <p class="font-bold text-xs text-emerald-600">${p.price === 0 ? 'BEPUL' : p.price.toLocaleString() + ' UZS'}</p>
+                    </div>
+                `);
+            });
+        }
+
+        // --- CHARITY GRID RENDERING ---
+        function renderCharityGrid() {
+            const container = document.getElementById('charity-grid');
+            const freeItems = products.filter(p => p.isCharity);
+            container.innerHTML = '';
+
+            freeItems.forEach(p => {
+                const el = document.createElement('div');
+                el.className = "bg-white dark:bg-dark-card p-5 rounded-2xl border border-rose-500/20 shadow-md space-y-3";
+                el.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <img src="${p.image}" class="w-14 h-14 rounded-xl object-cover">
+                        <div>
+                            <span class="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500 text-[10px] font-bold">100% BEPUL EHSON</span>
+                            <h4 class="font-bold text-sm">${p.name}</h4>
+                            <p class="text-xs text-gray-400">${p.restaurant}</p>
+                        </div>
+                    </div>
+                    <button onclick="showToast('Ehson so'rovi qabul qilindi!', 'success')" class="w-full py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs transition">
+                        So'rov Yuborish
+                    </button>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        // --- ANALYTICS CHARTS ---
+        function initCharts() {
+            const ctx1 = document.getElementById('impactChart1').getContext('2d');
+            new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Qutqarilgan Taom (kg)',
+                        data: [120, 240, 410, 680, 990, 1482],
+                        borderColor: '#16a34a',
+                        backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const ctx2 = document.getElementById('impactChart2').getContext('2d');
+            new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Milliy Taomlar', 'Fast Food', 'Novvoyxona', 'Sut & Ichimliklar'],
+                    datasets: [{
+                        data: [40, 30, 20, 10],
+                        backgroundColor: ['#16a34a', '#f59e0b', '#06b6d4', '#8b5cf6']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+    </script>
+</body>
+</html>
